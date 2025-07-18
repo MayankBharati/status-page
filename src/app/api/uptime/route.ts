@@ -1,0 +1,29 @@
+import { NextRequest, NextResponse } from 'next/server';
+import { auth } from '@clerk/nextjs/server';
+import { getAllServicesUptime, calculateServiceUptime } from '@/lib/uptime';
+
+export async function GET(req: NextRequest) {
+  try {
+    const { userId } = await auth();
+    if (!userId) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    const { searchParams } = new URL(req.url);
+    const serviceId = searchParams.get('serviceId');
+    const days = parseInt(searchParams.get('days') || '30');
+
+    if (serviceId) {
+      // Get uptime data for specific service
+      const uptimeData = await calculateServiceUptime(serviceId, days);
+      return NextResponse.json({ uptimeData });
+    } else {
+      // Get uptime data for all services
+      const servicesUptime = await getAllServicesUptime(days);
+      return NextResponse.json({ servicesUptime });
+    }
+  } catch (error) {
+    console.error('Error fetching uptime data:', error);
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+  }
+} 

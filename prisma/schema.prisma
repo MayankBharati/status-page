@@ -1,0 +1,158 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model incident_services {
+  id         String    @id
+  incidentId String
+  serviceId  String
+  createdAt  DateTime  @default(now())
+  incidents  incidents @relation(fields: [incidentId], references: [id], onDelete: Cascade)
+  services   services  @relation(fields: [serviceId], references: [id], onDelete: Cascade)
+
+  @@unique([incidentId, serviceId])
+}
+
+model maintenance_services {
+  id            String        @id
+  maintenanceId String
+  serviceId     String
+  createdAt     DateTime      @default(now())
+  maintenances  maintenances  @relation(fields: [maintenanceId], references: [id], onDelete: Cascade)
+  services      services      @relation(fields: [serviceId], references: [id], onDelete: Cascade)
+
+  @@unique([maintenanceId, serviceId])
+}
+
+model incident_updates {
+  id         String         @id
+  incidentId String
+  message    String
+  status     IncidentStatus
+  createdAt  DateTime       @default(now())
+  incidents  incidents      @relation(fields: [incidentId], references: [id], onDelete: Cascade)
+}
+
+model incidents {
+  id                String              @id
+  title             String
+  description       String
+  status            IncidentStatus      @default(INVESTIGATING)
+  severity          IncidentSeverity    @default(MINOR)
+  organizationId    String
+  createdAt         DateTime            @default(now())
+  updatedAt         DateTime
+  resolvedAt        DateTime?
+  incident_services incident_services[]
+  incident_updates  incident_updates[]
+  organizations     organizations       @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+}
+
+model maintenances {
+  id                   String                @id
+  title                String
+  description          String
+  status               MaintenanceStatus     @default(SCHEDULED)
+  organizationId       String
+  scheduledStart       DateTime
+  scheduledEnd         DateTime
+  actualStart          DateTime?
+  actualEnd            DateTime?
+  createdAt            DateTime              @default(now())
+  updatedAt            DateTime
+  organizations        organizations         @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  maintenance_services maintenance_services[]
+}
+
+model organization_members {
+  id             String        @id
+  organizationId String
+  userId         String
+  role           MemberRole    @default(MEMBER)
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime
+  organizations  organizations @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  @@unique([organizationId, userId])
+  @@index([userId])
+  @@index([organizationId])
+}
+
+model organizations {
+  id                   String                 @id
+  name                 String
+  slug                 String                 @unique
+  description          String?
+  logo                 String?
+  createdAt            DateTime               @default(now())
+  updatedAt            DateTime
+  incidents            incidents[]
+  maintenances         maintenances[]
+  organization_members organization_members[]
+  services             services[]
+
+  @@index([id])
+}
+
+model service_status_history {
+  id        String        @id
+  serviceId String
+  status    ServiceStatus
+  message   String?
+  createdAt DateTime      @default(now())
+  services  services      @relation(fields: [serviceId], references: [id], onDelete: Cascade)
+}
+
+model services {
+  id                     String                   @id
+  name                   String
+  description            String?
+  status                 ServiceStatus            @default(OPERATIONAL)
+  uptime                 Float                    @default(100.0)
+  organizationId         String
+  createdAt              DateTime                 @default(now())
+  updatedAt              DateTime
+  incident_services      incident_services[]
+  maintenance_services   maintenance_services[]
+  service_status_history service_status_history[]
+  organizations          organizations            @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+}
+
+enum ServiceStatus {
+  OPERATIONAL
+  DEGRADED_PERFORMANCE
+  PARTIAL_OUTAGE
+  MAJOR_OUTAGE
+  UNDER_MAINTENANCE
+}
+
+enum IncidentStatus {
+  INVESTIGATING
+  IDENTIFIED
+  MONITORING
+  RESOLVED
+}
+
+enum IncidentSeverity {
+  MINOR
+  MAJOR
+  CRITICAL
+}
+
+enum MaintenanceStatus {
+  SCHEDULED
+  IN_PROGRESS
+  COMPLETED
+  CANCELLED
+}
+
+enum MemberRole {
+  OWNER
+  ADMIN
+  MEMBER
+}
