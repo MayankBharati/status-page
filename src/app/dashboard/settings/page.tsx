@@ -6,7 +6,6 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
 import { Separator } from "@/components/ui/separator";
 import { useToast } from "@/hooks/use-toast";
@@ -341,7 +340,7 @@ export default function SettingsPage() {
               <li>1. Enable 2-Factor Authentication on your Gmail account</li>
               <li>2. Generate an App Password: Google Account → Security → App Passwords</li>
               <li>3. Use the App Password (not your regular password) in the Email Password field</li>
-              <li>4. Test the configuration using the "Test Email" button</li>
+              <li>4. Test the configuration using the &quot;Test Email&quot; button</li>
             </ol>
           </div>
         </CardContent>

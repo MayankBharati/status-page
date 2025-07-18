@@ -39,7 +39,9 @@ export const useSocket = (options: UseSocketOptions = {}) => {
     const socket = io(socketUrl, {
       transports: ['websocket', 'polling'],
       timeout: 5000,
-      reconnection: false, // Disable automatic reconnection to prevent spam
+      reconnection: true, // Enable reconnection for better reliability
+      reconnectionAttempts: 5,
+      reconnectionDelay: 1000,
     });
 
     socket.on('connect', () => {
