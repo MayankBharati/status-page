@@ -139,7 +139,7 @@ export default function EditMaintenancePage({ params }: { params: { id: string }
       });
 
       router.push("/dashboard/maintenance");
-    } catch (error) {
+    } catch {
       toast({
         title: "Error",
         description: "Failed to update maintenance. Please try again.",

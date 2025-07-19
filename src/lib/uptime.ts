@@ -26,7 +26,6 @@ export const calculateServiceUptime = async (
   days: number = 30
 ): Promise<UptimeData[]> => {
   const endDate = new Date();
-  const startDate = subDays(endDate, days);
   
   const uptimeData: UptimeData[] = [];
   

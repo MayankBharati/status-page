@@ -1,15 +1,7 @@
-import { NextRequest, NextResponse } from 'next/server';
-import { PrismaClient } from '@prisma/client';
+import { NextResponse } from 'next/server';
 
-const prisma = new PrismaClient();
-
-export async function GET(
-  request: NextRequest,
-  { params }: { params: { token: string } }
-) {
+export async function GET() {
   try {
-    const { token } = params;
-
     // For now, return mock data since the invitations table isn't available yet
     // In the future, this will fetch from the invitations table
     const mockInvitation = {

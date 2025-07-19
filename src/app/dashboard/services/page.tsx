@@ -1,11 +1,10 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
-import { useRouter } from "next/navigation";
 import { useToast } from "@/hooks/use-toast";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -26,10 +25,7 @@ import {
   Edit,
   Trash,
   Activity,
-  AlertCircle,
-  CheckCircle,
-  XCircle,
-  AlertTriangle
+  AlertCircle
 } from "lucide-react";
 import Link from "next/link";
 import { Textarea } from "@/components/ui/textarea";
@@ -45,36 +41,7 @@ interface Service {
   updatedAt: string;
 }
 
-const statusConfig = {
-  OPERATIONAL: {
-    label: "Operational",
-    color: "bg-green-500",
-    badgeVariant: "default" as const,
-  },
-  DEGRADED_PERFORMANCE: {
-    label: "Degraded",
-    color: "bg-yellow-500",
-    badgeVariant: "secondary" as const,
-  },
-  PARTIAL_OUTAGE: {
-    label: "Partial Outage",
-    color: "bg-orange-500",
-    badgeVariant: "secondary" as const,
-  },
-  MAJOR_OUTAGE: {
-    label: "Major Outage",
-    color: "bg-red-500",
-    badgeVariant: "destructive" as const,
-  },
-  UNDER_MAINTENANCE: {
-    label: "Maintenance",
-    color: "bg-blue-500",
-    badgeVariant: "secondary" as const,
-  },
-};
-
 export default function ServicesPage() {
-  const router = useRouter();
   const { toast } = useToast();
   const [searchQuery, setSearchQuery] = useState("");
   const [services, setServices] = useState<Service[]>([]);
@@ -97,7 +64,7 @@ export default function ServicesPage() {
   });
 
   // WebSocket connection for real-time updates
-  const { isConnected } = useSocket({
+  const { } = useSocket({
     onServiceStatusChange: (data) => {
       console.log('Service status changed:', data);
       // Refresh services when status changes
@@ -105,12 +72,7 @@ export default function ServicesPage() {
     },
   });
 
-  // Load services from API
-  useEffect(() => {
-    fetchServices();
-  }, []);
-
-  const fetchServices = async () => {
+  const fetchServices = useCallback(async () => {
     try {
       setLoading(true);
       const response = await fetch("/api/services");
@@ -135,7 +97,12 @@ export default function ServicesPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [toast]);
+
+  // Load services from API
+  useEffect(() => {
+    fetchServices();
+  }, [fetchServices]);
 
   const handleUpdateStatus = async () => {
     if (!selectedService) return;

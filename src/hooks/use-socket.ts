@@ -1,4 +1,4 @@
-import { useEffect, useRef, useCallback, useState } from 'react';
+import { useEffect, useCallback, useState } from 'react';
 import { io, Socket } from 'socket.io-client';
 
 interface UseSocketOptions {

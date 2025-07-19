@@ -5,7 +5,7 @@ import { getOrCreateDefaultOrganization } from '@/lib/organization';
 import { emitMaintenanceUpdate } from '@/lib/socket';
 import { sendEmailNotification, createMaintenanceEmail } from '@/lib/email';
 
-export async function GET(req: NextRequest) {
+export async function GET() {
   try {
     const { userId } = await auth();
     if (!userId) {

@@ -1,9 +1,7 @@
 "use client";
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import {
-  LineChart,
-  Line,
   AreaChart,
   Area,
   BarChart,
@@ -19,7 +17,6 @@ import {
   Cell,
 } from 'recharts';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Loader2, TrendingUp, TrendingDown, Activity } from 'lucide-react';
 
@@ -92,11 +89,7 @@ export function UptimeTrendChart({ serviceId }: { serviceId: string }) {
   const [loading, setLoading] = useState(true);
   const [days, setDays] = useState('30');
 
-  useEffect(() => {
-    fetchUptimeData();
-  }, [serviceId, days]);
-
-  const fetchUptimeData = async () => {
+  const fetchUptimeData = useCallback(async () => {
     try {
       setLoading(true);
       const response = await fetch(`/api/uptime?serviceId=${serviceId}&days=${days}`);
@@ -108,7 +101,11 @@ export function UptimeTrendChart({ serviceId }: { serviceId: string }) {
     } finally {
       setLoading(false);
     }
-  };
+  }, [serviceId, days]);
+
+  useEffect(() => {
+    fetchUptimeData();
+  }, [fetchUptimeData]);
 
   if (loading) {
     return (

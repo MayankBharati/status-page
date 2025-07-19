@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -20,11 +20,10 @@ interface UptimeChartProps {
 
 export default function UptimeChart({ serviceId, timeRange = '7d' }: UptimeChartProps) {
   const [data, setData] = useState<UptimeData[]>([]);
-  const [selectedRange, setSelectedRange] = useState(timeRange);
   const [loading, setLoading] = useState(true);
+  const [selectedRange, setSelectedRange] = useState(timeRange);
 
-  // Mock data - in production, this would come from the API
-  const mockData: Record<string, UptimeData[]> = {
+  const mockData = useMemo(() => ({
     '24h': Array.from({ length: 24 }, (_, i) => ({
       date: new Date(Date.now() - (23 - i) * 60 * 60 * 1000).toISOString(),
       uptime: 95 + Math.random() * 5,
@@ -49,7 +48,7 @@ export default function UptimeChart({ serviceId, timeRange = '7d' }: UptimeChart
       incidents: Math.random() > 0.85 ? 1 : 0,
       maintenance: Math.random() > 0.95 ? 1 : 0,
     })),
-  };
+  }), []);
 
   useEffect(() => {
     setLoading(true);
@@ -58,7 +57,7 @@ export default function UptimeChart({ serviceId, timeRange = '7d' }: UptimeChart
       setData(mockData[selectedRange] || []);
       setLoading(false);
     }, 500);
-  }, [selectedRange, serviceId]);
+  }, [selectedRange, serviceId, mockData]);
 
   const calculateStats = () => {
     if (data.length === 0) return { avg: 0, min: 0, max: 0, trend: 0 };

@@ -65,7 +65,7 @@ export default function OrganizationPage() {
         title: "Settings saved",
         description: "Organization settings have been updated successfully.",
       });
-    } catch (error) {
+    } catch {
       toast({
         title: "Error",
         description: "Failed to save settings. Please try again.",
@@ -82,7 +82,7 @@ export default function OrganizationPage() {
         description: "Your organization has been deleted successfully.",
       });
       setDeleteDialog(false);
-    } catch (error) {
+    } catch {
       toast({
         title: "Error",
         description: "Failed to delete organization. Please try again.",

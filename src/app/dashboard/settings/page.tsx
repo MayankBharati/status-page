@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useUser } from "@clerk/nextjs";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -40,7 +40,7 @@ export default function SettingsPage() {
   });
 
   // Fetch current settings
-  const fetchSettings = async () => {
+  const fetchSettings = useCallback(async () => {
     try {
       setLoading(true);
       const response = await fetch('/api/settings');
@@ -77,13 +77,13 @@ export default function SettingsPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [user?.primaryEmailAddress?.emailAddress, toast]);
 
   useEffect(() => {
     if (user) {
       fetchSettings();
     }
-  }, [user, toast]);
+  }, [user, fetchSettings]);
 
   // Handle form changes
   const handleEmailSettingChange = (field: keyof EmailSettings, value: string | boolean) => {

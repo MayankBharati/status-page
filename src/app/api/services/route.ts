@@ -4,7 +4,7 @@ import { prisma } from '@/lib/prisma';
 import { getOrCreateDefaultOrganization } from '@/lib/organization';
 import { emitServiceStatusUpdate } from '@/lib/socket';
 
-export async function GET(req: NextRequest) {
+export async function GET() {
   try {
     const { userId } = await auth();
     if (!userId) {

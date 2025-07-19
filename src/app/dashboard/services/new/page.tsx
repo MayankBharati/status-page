@@ -48,7 +48,7 @@ export default function NewServicePage() {
       });
 
       router.push("/dashboard/services");
-    } catch (error) {
+    } catch {
       toast({
         title: "Error",
         description: "Failed to create service. Please try again.",

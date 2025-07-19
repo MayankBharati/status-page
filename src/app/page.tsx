@@ -5,10 +5,7 @@ import { Badge } from "@/components/ui/badge";
 import { 
   Activity, 
   Bell, 
-  CheckCircle2, 
   Clock, 
-  Globe, 
-  Shield, 
   Users, 
   Zap,
   ArrowRight,

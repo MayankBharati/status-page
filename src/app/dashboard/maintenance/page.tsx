@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -72,7 +72,7 @@ export default function MaintenancePage() {
   const { toast } = useToast();
 
   // WebSocket connection for real-time updates
-  const { isConnected } = useSocket({
+  const { } = useSocket({
     onMaintenanceUpdate: (data) => {
       console.log('Maintenance updated:', data);
       // Refresh maintenance when updates occur
@@ -80,11 +80,7 @@ export default function MaintenancePage() {
     },
   });
 
-  useEffect(() => {
-    fetchMaintenances();
-  }, []);
-
-  const fetchMaintenances = async () => {
+  const fetchMaintenances = useCallback(async () => {
     try {
       setLoading(true);
       const response = await fetch('/api/maintenance');
@@ -103,7 +99,11 @@ export default function MaintenancePage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [toast]);
+
+  useEffect(() => {
+    fetchMaintenances();
+  }, [fetchMaintenances]);
 
   const handleCancelMaintenance = async (maintenanceId: string) => {
     try {

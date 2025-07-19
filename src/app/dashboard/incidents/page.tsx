@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -13,8 +13,6 @@ import {
   Clock,
   CheckCircle2,
   XCircle,
-  MessageSquare,
-  TrendingUp,
   Loader2,
   Eye,
   MessageSquarePlus,
@@ -112,7 +110,7 @@ export default function IncidentsPage() {
   const { toast } = useToast();
 
   // WebSocket connection for real-time updates
-  const { isConnected } = useSocket({
+  const { } = useSocket({
     onIncidentUpdate: (data) => {
       console.log('Incident updated:', data);
       // Refresh incidents when updates occur
@@ -120,11 +118,7 @@ export default function IncidentsPage() {
     },
   });
 
-  useEffect(() => {
-    fetchIncidents();
-  }, []);
-
-  const fetchIncidents = async () => {
+  const fetchIncidents = useCallback(async () => {
     try {
       setLoading(true);
       const response = await fetch('/api/incidents');
@@ -143,7 +137,11 @@ export default function IncidentsPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [toast]);
+
+  useEffect(() => {
+    fetchIncidents();
+  }, [fetchIncidents]);
 
   const handleAddUpdate = async (incidentId: string) => {
     try {

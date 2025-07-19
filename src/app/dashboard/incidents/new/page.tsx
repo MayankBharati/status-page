@@ -64,7 +64,7 @@ export default function NewIncidentPage() {
       });
 
       router.push("/dashboard/incidents");
-    } catch (error) {
+    } catch {
       toast({
         title: "Error",
         description: "Failed to create incident. Please try again.",

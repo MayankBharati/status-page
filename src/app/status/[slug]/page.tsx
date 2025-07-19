@@ -1,9 +1,8 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { 
   Activity, 
@@ -13,7 +12,6 @@ import {
   Info,
   XCircle,
   Zap,
-  Calendar,
   TrendingUp,
   Loader2
 } from "lucide-react";
@@ -128,7 +126,7 @@ export default function PublicStatusPage({ params }: { params: { slug: string } 
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  const fetchStatusData = async () => {
+  const fetchStatusData = useCallback(async () => {
     try {
       setLoading(true);
       const response = await fetch(`/api/public/status?org=${params.slug}`);
@@ -142,7 +140,7 @@ export default function PublicStatusPage({ params }: { params: { slug: string } 
     } finally {
       setLoading(false);
     }
-  };
+  }, [params.slug]);
 
   // WebSocket connection for real-time updates
   const { isConnected } = useSocket({
@@ -171,7 +169,7 @@ export default function PublicStatusPage({ params }: { params: { slug: string } 
     const interval = setInterval(fetchStatusData, 30000);
     
     return () => clearInterval(interval);
-  }, [params.slug]);
+  }, [fetchStatusData]);
 
   useEffect(() => {
     const timer = setInterval(() => {
@@ -205,14 +203,19 @@ export default function PublicStatusPage({ params }: { params: { slug: string } 
   }
 
   // Calculate overall status
-  const hasOutage = statusData.services.some(s => 
-    s.status === "major outage" || s.status === "partial outage"
-  );
-  const hasDegraded = statusData.services.some(s => 
-    s.status === "degraded performance"
-  );
-  const overallStatus = hasOutage ? "experiencing issues" : hasDegraded ? "degraded performance" : "operational";
+  const services: Service[] = statusData.services as Service[];
+  const operationalServices = services.filter((s) => s.status === 'OPERATIONAL').length;
+  const totalServices = services.length;
 
+  // Determine overall health
+  let health = 'operational';
+  if (operationalServices / totalServices < 0.5) {
+    health = 'major_outage';
+  } else if (operationalServices / totalServices < 0.75) {
+    health = 'partial_outage';
+  } else if (operationalServices / totalServices < 0.95) {
+    health = 'degraded';
+  }
 
 
   return (
@@ -250,22 +253,22 @@ export default function PublicStatusPage({ params }: { params: { slug: string } 
 
       {/* Overall Status Banner */}
       <div className={`py-8 ${
-        hasOutage ? "bg-red-50 dark:bg-red-950/20" : 
-        hasDegraded ? "bg-yellow-50 dark:bg-yellow-950/20" : 
+        health === "major_outage" ? "bg-red-50 dark:bg-red-950/20" : 
+        health === "partial_outage" ? "bg-yellow-50 dark:bg-yellow-950/20" : 
         "bg-green-50 dark:bg-green-950/20"
       }`}>
         <div className="container mx-auto px-4">
           <div className="flex items-center justify-center space-x-3">
-            {hasOutage ? (
+            {health === "major_outage" ? (
               <XCircle className="h-8 w-8 text-red-600" />
-            ) : hasDegraded ? (
+            ) : health === "partial_outage" ? (
               <AlertCircle className="h-8 w-8 text-yellow-600" />
             ) : (
               <CheckCircle2 className="h-8 w-8 text-green-600" />
             )}
             <h2 className="text-2xl font-semibold">
-              {hasOutage ? "Some systems are experiencing issues" :
-               hasDegraded ? "Some systems have degraded performance" :
+              {health === "major_outage" ? "Some systems are experiencing issues" :
+               health === "partial_outage" ? "Some systems have degraded performance" :
                "All systems operational"}
             </h2>
           </div>
@@ -299,7 +302,6 @@ export default function PublicStatusPage({ params }: { params: { slug: string } 
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3 mb-8">
           {statusData.services.map((service) => {
             const config = statusConfig[service.status as keyof typeof statusConfig] || statusConfig.operational;
-            const Icon = config.icon;
             
             return (
               <Card key={service.id} className="relative">

@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { services as Service, incidents as Incident, maintenances as Maintenance, maintenance_services as MaintenanceService } from '@prisma/client';
+import { services as Service, maintenance_services as MaintenanceService } from '@prisma/client';
 import { prisma } from '@/lib/prisma';
 
 export async function GET(req: NextRequest) {

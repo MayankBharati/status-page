@@ -42,7 +42,7 @@ export default function NewTeamPage() {
       });
 
       router.push("/dashboard/teams");
-    } catch (error) {
+    } catch {
       toast({
         title: "Error",
         description: "Failed to create team. Please try again.",

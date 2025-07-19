@@ -1,9 +1,9 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Loader2, BarChart3, TrendingUp, Activity } from "lucide-react";
+import { Loader2, BarChart3 } from "lucide-react";
 import { 
   UptimeOverview, 
   UptimeComparisonChart, 
@@ -27,11 +27,7 @@ export default function MetricsPage() {
   const [selectedService, setSelectedService] = useState<string>('');
   const [timeRange, setTimeRange] = useState('30');
 
-  useEffect(() => {
-    fetchUptimeData();
-  }, [timeRange]);
-
-  const fetchUptimeData = async () => {
+  const fetchUptimeData = useCallback(async () => {
     try {
       setLoading(true);
       const response = await fetch(`/api/uptime?days=${timeRange}`);
@@ -48,7 +44,11 @@ export default function MetricsPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [timeRange, selectedService]);
+
+  useEffect(() => {
+    fetchUptimeData();
+  }, [fetchUptimeData]);
 
   if (loading) {
     return (

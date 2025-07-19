@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -29,8 +29,7 @@ import {
   Mail,
   Edit,
   Trash,
-  UserMinus,
-  Loader2
+  UserMinus
 } from "lucide-react";
 
 const roleConfig = {
@@ -117,8 +116,8 @@ export default function TeamsPage() {
   });
 
   // WebSocket connection for real-time updates
-  const { isConnected } = useSocket({
-    onServiceStatusChange: (data) => {
+  const { } = useSocket({
+    onServiceStatusChange: () => {
       // Refresh teams when any service status changes (might affect team permissions)
       fetchTeams();
     },
@@ -135,7 +134,7 @@ export default function TeamsPage() {
   });
 
   // Fetch teams data
-  const fetchTeams = async () => {
+  const fetchTeams = useCallback(async () => {
     try {
       setLoading(true);
       const response = await fetch('/api/teams', {
@@ -166,11 +165,11 @@ export default function TeamsPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [toast]);
 
   useEffect(() => {
     fetchTeams();
-  }, [toast]);
+  }, [fetchTeams]);
 
   const getInitials = (name: string) => {
     return name
