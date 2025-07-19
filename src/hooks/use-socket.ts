@@ -34,12 +34,24 @@ export const useSocket = (options: UseSocketOptions = {}) => {
       globalSocket.disconnect();
     }
 
-    const socketUrl = process.env.NEXT_PUBLIC_WS_URL || process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
+    // Fix the WebSocket URL to prevent incorrect connections
+    let socketUrl = 'http://localhost:3000';
+    
+    if (typeof window !== 'undefined') {
+      // In browser, use the current origin
+      socketUrl = window.location.origin;
+    } else if (process.env.NEXT_PUBLIC_WS_URL) {
+      socketUrl = process.env.NEXT_PUBLIC_WS_URL;
+    } else if (process.env.NEXT_PUBLIC_APP_URL) {
+      socketUrl = process.env.NEXT_PUBLIC_APP_URL;
+    }
+    
+    console.log('Connecting to WebSocket at:', socketUrl);
     
     const socket = io(socketUrl, {
       transports: ['websocket', 'polling'],
       timeout: 5000,
-      reconnection: true, // Enable reconnection for better reliability
+      reconnection: true,
       reconnectionAttempts: 5,
       reconnectionDelay: 1000,
     });
