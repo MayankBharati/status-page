@@ -25,6 +25,12 @@ export const useSocket = (options: UseSocketOptions = {}) => {
   } = options;
 
   const connect = useCallback(() => {
+    // Disable WebSocket on Vercel deployment to prevent connection errors
+    if (typeof window !== 'undefined' && window.location.hostname.includes('vercel.app')) {
+      console.log('WebSocket disabled on Vercel deployment');
+      return;
+    }
+
     if (globalSocket?.connected) {
       setIsConnected(true);
       return;
@@ -46,6 +52,13 @@ export const useSocket = (options: UseSocketOptions = {}) => {
       socketUrl = process.env.NEXT_PUBLIC_APP_URL;
     }
     
+    // Ensure we're using the correct protocol for WebSocket
+    if (socketUrl.startsWith('https://')) {
+      socketUrl = socketUrl.replace('https://', 'wss://');
+    } else if (socketUrl.startsWith('http://')) {
+      socketUrl = socketUrl.replace('http://', 'ws://');
+    }
+    
     console.log('Connecting to WebSocket at:', socketUrl);
     
     const socket = io(socketUrl, {
@@ -54,6 +67,7 @@ export const useSocket = (options: UseSocketOptions = {}) => {
       reconnection: true,
       reconnectionAttempts: 5,
       reconnectionDelay: 1000,
+      forceNew: true,
     });
 
     socket.on('connect', () => {
