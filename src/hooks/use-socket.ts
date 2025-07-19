@@ -15,6 +15,7 @@ let globalSocket: Socket | null = null;
 
 export const useSocket = (options: UseSocketOptions = {}) => {
   const [isConnected, setIsConnected] = useState(false);
+  const [isClient, setIsClient] = useState(false);
   const { 
     organizationSlug, 
     onServiceStatusChange, 
@@ -24,7 +25,15 @@ export const useSocket = (options: UseSocketOptions = {}) => {
     onTeamUpdate
   } = options;
 
+  // Ensure we're on the client side
+  useEffect(() => {
+    setIsClient(true);
+  }, []);
+
   const connect = useCallback(() => {
+    // Don't connect during server-side rendering
+    if (!isClient) return;
+
     // Disable WebSocket on Vercel deployment to prevent connection errors
     if (typeof window !== 'undefined' && window.location.hostname.includes('vercel.app')) {
       console.log('WebSocket disabled on Vercel deployment');
@@ -166,7 +175,7 @@ export const useSocket = (options: UseSocketOptions = {}) => {
     });
 
     globalSocket = socket;
-  }, [organizationSlug, onServiceStatusChange, onIncidentUpdate, onMaintenanceUpdate, onTeamMemberUpdate, onTeamUpdate]);
+  }, [isClient, organizationSlug, onServiceStatusChange, onIncidentUpdate, onMaintenanceUpdate, onTeamMemberUpdate, onTeamUpdate]);
 
   const disconnect = useCallback(() => {
     if (globalSocket) {
@@ -180,24 +189,24 @@ export const useSocket = (options: UseSocketOptions = {}) => {
   }, [organizationSlug]);
 
   useEffect(() => {
-    // Only connect if we don't have a global socket
-    if (!globalSocket) {
+    // Only connect if we're on the client and don't have a global socket
+    if (isClient && !globalSocket) {
       connect();
-    } else {
+    } else if (isClient && globalSocket) {
       setIsConnected(globalSocket.connected);
     }
 
     return () => {
       // Don't disconnect on unmount to keep the global connection
     };
-  }, [connect]);
+  }, [isClient, connect]);
 
   // Reconnect when organization slug changes
   useEffect(() => {
-    if (globalSocket?.connected && organizationSlug) {
+    if (isClient && globalSocket?.connected && organizationSlug) {
       globalSocket.emit('join-organization', organizationSlug);
     }
-  }, [organizationSlug]);
+  }, [isClient, organizationSlug]);
 
   return {
     socket: globalSocket,
