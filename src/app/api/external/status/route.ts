@@ -3,6 +3,9 @@ import { PrismaClient } from '@prisma/client';
 
 const prisma = new PrismaClient();
 
+// Force dynamic rendering to prevent static generation warnings
+export const dynamic = 'force-dynamic';
+
 interface StatusData {
   organization: {
     name: string;

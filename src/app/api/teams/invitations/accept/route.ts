@@ -9,18 +9,19 @@ export async function POST() {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    // For now, return success since the invitations table isn't available yet
+    // For now, return success since the team invitations table isn't available yet
     // In the future, this will:
-    // 1. Find the invitation by token
+    // 1. Find the team invitation by token
     // 2. Check if it's expired
-    // 3. Update invitation status to DECLINED
-    // 4. Optionally notify the team owner
+    // 3. Add the user to the team
+    // 4. Update invitation status to ACCEPTED
 
     return NextResponse.json({ 
-      message: 'Invitation declined successfully'
+      message: 'Team invitation accepted successfully',
+      teamId: 'demo-team-id'
     });
   } catch (error) {
-    console.error('Error declining invitation:', error);
+    console.error('Error accepting team invitation:', error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 } 

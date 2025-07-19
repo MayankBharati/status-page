@@ -2,6 +2,9 @@ import { NextRequest, NextResponse } from 'next/server';
 import { services as Service, maintenance_services as MaintenanceService } from '@prisma/client';
 import { prisma } from '@/lib/prisma';
 
+// Force dynamic rendering to prevent static generation warnings
+export const dynamic = 'force-dynamic';
+
 export async function GET(req: NextRequest) {
   try {
     const { searchParams } = new URL(req.url);
