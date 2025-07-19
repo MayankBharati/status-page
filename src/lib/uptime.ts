@@ -20,12 +20,46 @@ export interface ServiceUptime {
   currentStatus: string;
 }
 
-// Calculate uptime for a service over a given period
+// Calculate uptime for a service over a given period (optimized)
 export const calculateServiceUptime = async (
   serviceId: string,
   days: number = 30
 ): Promise<UptimeData[]> => {
   const endDate = new Date();
+  const startDate = subDays(endDate, days - 1);
+  
+  // Get all incidents for the service in one query
+  const incidents = await prisma.incidents.findMany({
+    where: {
+      incident_services: {
+        some: {
+          serviceId: serviceId
+        }
+      },
+      createdAt: {
+        gte: startDate
+      }
+    },
+    include: {
+      incident_services: {
+        where: {
+          serviceId: serviceId
+        }
+      }
+    }
+  });
+  
+  // Get all maintenance for the service in one query
+  const maintenance = await prisma.maintenances.findMany({
+    where: {
+      scheduledStart: {
+        gte: startDate
+      },
+      status: {
+        in: ['SCHEDULED', 'IN_PROGRESS']
+      }
+    }
+  });
   
   const uptimeData: UptimeData[] = [];
   
@@ -34,47 +68,10 @@ export const calculateServiceUptime = async (
     const dayStart = startOfDay(date);
     const dayEnd = endOfDay(date);
     
-    // Get incidents for this day
-    const incidents = await prisma.incidents.findMany({
-      where: {
-        incident_services: {
-          some: {
-            serviceId: serviceId
-          }
-        },
-        createdAt: {
-          gte: dayStart,
-          lte: dayEnd
-        }
-      },
-      include: {
-        incident_services: {
-          where: {
-            serviceId: serviceId
-          }
-        }
-      }
-    });
-    
-    // Get maintenance for this day
-    const maintenance = await prisma.maintenances.findMany({
-      where: {
-        scheduledStart: {
-          lte: dayEnd
-        },
-        scheduledEnd: {
-          gte: dayStart
-        },
-        status: {
-          in: ['SCHEDULED', 'IN_PROGRESS']
-        }
-      }
-    });
-    
-    // Calculate downtime minutes
+    // Calculate downtime minutes for this day
     let downtimeMinutes = 0;
     
-    // Add incident downtime
+    // Add incident downtime for this day
     incidents.forEach(incident => {
       const incidentStart = new Date(incident.createdAt);
       const incidentEnd = incident.resolvedAt ? new Date(incident.resolvedAt) : dayEnd;
@@ -87,7 +84,7 @@ export const calculateServiceUptime = async (
       }
     });
     
-    // Add maintenance downtime
+    // Add maintenance downtime for this day
     maintenance.forEach(maint => {
       const maintStart = new Date(maint.scheduledStart);
       const maintEnd = new Date(maint.scheduledEnd);
@@ -115,7 +112,7 @@ export const calculateServiceUptime = async (
   return uptimeData.reverse(); // Return in chronological order
 };
 
-// Calculate overall uptime for a service
+// Calculate overall uptime for a service (optimized)
 export const calculateOverallUptime = async (
   serviceId: string,
   days: number = 30
@@ -128,11 +125,72 @@ export const calculateOverallUptime = async (
     throw new Error('Service not found');
   }
   
-  const uptimeData = await calculateServiceUptime(serviceId, days);
+  const endDate = new Date();
+  const startDate = subDays(endDate, days - 1);
   
-  const totalUptime = uptimeData.reduce((sum, day) => sum + day.uptime, 0);
-  const totalDowntime = uptimeData.reduce((sum, day) => sum + day.downtime, 0);
-  const uptimePercentage = totalUptime / uptimeData.length;
+  // Get total downtime minutes in one query
+  const incidents = await prisma.incidents.findMany({
+    where: {
+      incident_services: {
+        some: {
+          serviceId: serviceId
+        }
+      },
+      createdAt: {
+        gte: startDate
+      }
+    },
+    select: {
+      createdAt: true,
+      resolvedAt: true
+    }
+  });
+  
+  const maintenance = await prisma.maintenances.findMany({
+    where: {
+      scheduledStart: {
+        gte: startDate
+      },
+      status: {
+        in: ['SCHEDULED', 'IN_PROGRESS']
+      }
+    },
+    select: {
+      scheduledStart: true,
+      scheduledEnd: true
+    }
+  });
+  
+  // Calculate total downtime
+  let totalDowntimeMinutes = 0;
+  
+  incidents.forEach(incident => {
+    const incidentStart = new Date(incident.createdAt);
+    const incidentEnd = incident.resolvedAt ? new Date(incident.resolvedAt) : endDate;
+    
+    const start = incidentStart > startDate ? incidentStart : startDate;
+    const end = incidentEnd < endDate ? incidentEnd : endDate;
+    
+    if (start < end) {
+      totalDowntimeMinutes += differenceInMinutes(end, start);
+    }
+  });
+  
+  maintenance.forEach(maint => {
+    const maintStart = new Date(maint.scheduledStart);
+    const maintEnd = new Date(maint.scheduledEnd);
+    
+    const start = maintStart > startDate ? maintStart : startDate;
+    const end = maintEnd < endDate ? maintEnd : endDate;
+    
+    if (start < end) {
+      totalDowntimeMinutes += differenceInMinutes(end, start);
+    }
+  });
+  
+  const totalMinutes = days * 24 * 60; // Total minutes in the period
+  const totalUptimeMinutes = totalMinutes - totalDowntimeMinutes;
+  const uptimePercentage = (totalUptimeMinutes / totalMinutes) * 100;
   
   // Get last incident
   const lastIncident = await prisma.incidents.findFirst({
@@ -145,6 +203,9 @@ export const calculateOverallUptime = async (
     },
     orderBy: {
       createdAt: 'desc'
+    },
+    select: {
+      title: true
     }
   });
   
@@ -152,16 +213,21 @@ export const calculateOverallUptime = async (
     serviceId,
     serviceName: service.name,
     uptimePercentage: Math.round(uptimePercentage * 100) / 100,
-    totalUptime: Math.round(totalUptime * 100) / 100,
-    totalDowntime: Math.round(totalDowntime * 100) / 100,
+    totalUptime: Math.round(uptimePercentage * 100) / 100,
+    totalDowntime: Math.round((100 - uptimePercentage) * 100) / 100,
     lastIncident: lastIncident?.title,
     currentStatus: service.status
   };
 };
 
-// Get uptime data for all services
+// Get uptime data for all services (optimized)
 export const getAllServicesUptime = async (days: number = 30): Promise<ServiceUptime[]> => {
   const services = await prisma.services.findMany();
+  
+  if (services.length === 0) {
+    return [];
+  }
+  
   const uptimePromises = services.map(service => 
     calculateOverallUptime(service.id, days)
   );
