@@ -8,15 +8,6 @@ export const prisma = globalForPrisma.prisma ?? new PrismaClient({
   log: ['error', 'warn'],
 });
 
-// Add connection error handling
-prisma.$connect()
-  .then(() => {
-    console.log('✅ Database connected successfully');
-  })
-  .catch((error) => {
-    console.error('❌ Database connection failed:', error);
-  });
-
 // Handle graceful shutdown
 process.on('beforeExit', async () => {
   await prisma.$disconnect();
